@@ -26,6 +26,7 @@ App runs on http://localhost:3000.
 | `/design-partners`     | Design Partners landing + application form               |
 | `/apply`               | Legacy apply page — redirects users to `/design-partners`|
 | `/api/design-partner`  | POST endpoint that validates + persists applications      |
+| `/api/design-partner/export` | GET — downloads all submissions as CSV (requires `ADMIN_EXPORT_KEY`) |
 
 ## Design system (dark Red × Black)
 
@@ -75,7 +76,18 @@ Submissions are appended to `data/design-partner-submissions.json`. Each entry:
 }
 ```
 
-The storage layer in `pages/api/design-partner.js` is deliberately isolated to three tiny functions:
+### Viewing / exporting submissions
+
+- **Raw JSON:** open `data/design-partner-submissions.json` in your editor or Hostinger File Manager.
+- **CSV download:** `GET /api/design-partner/export?key=<ADMIN_EXPORT_KEY>` returns a spreadsheet-ready CSV (with UTF-8 BOM so Excel on Windows reads it correctly).
+  - Alternatively pass the key as a header: `Authorization: Bearer <ADMIN_EXPORT_KEY>`.
+  - Bookmark the URL with the key for one-click exports.
+
+Set `ADMIN_EXPORT_KEY` in `.env.local` for dev and in Hostinger → your Node.js app → **Environment variables** for production. Use a long random string (e.g. `openssl rand -hex 32`). If the var is missing on the server, the route returns `503` and refuses to serve.
+
+### Storage layer
+
+The storage layer lives in `lib/design-partner-store.js` and exposes three tiny functions:
 
 - `ensureStore()` — creates `data/` + the JSON file if missing
 - `readAll()` — parses existing entries, safely handles empty/malformed JSON (corrupt files are renamed, never destroyed)

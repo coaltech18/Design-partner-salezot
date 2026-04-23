@@ -98,8 +98,21 @@ Set these in the Node.js app's **Environment variables** tab (never commit them)
 |---|---|
 | `NODE_ENV` | `production` (usually auto-set by the Production mode toggle) |
 | `NEXT_PUBLIC_APP_URL` | `https://dp.salezot.com` |
+| `ADMIN_EXPORT_KEY` | a long random string, e.g. `openssl rand -hex 32` |
 
-Add more later as the app grows (database URLs, API keys, etc.).
+`ADMIN_EXPORT_KEY` guards the CSV export endpoint. Without it, `GET /api/design-partner/export` returns `503`. Keep this key private — anyone with it can download every submission.
+
+Add more later as the app grows (database URLs, other API keys, etc.).
+
+### Downloading submissions as CSV
+
+Once deployed, bookmark this URL (replace the key with the one you set):
+
+```
+https://dp.salezot.com/api/design-partner/export?key=YOUR_ADMIN_EXPORT_KEY
+```
+
+Clicking it downloads `salezot-design-partners-<timestamp>.csv` with every submission. Opens cleanly in Excel, Numbers, Google Sheets.
 
 ---
 

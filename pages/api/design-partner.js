@@ -1,19 +1,13 @@
-import { promises as fs } from "fs";
-import path from "path";
 import crypto from "crypto";
+import { append } from "../../lib/design-partner-store";
 
 /* ------------------------------------------------------------------
    Salezot — Design Partner submissions API
    - POST only
    - Server-side validation mirrors the client
-   - Append-only write to data/design-partner-submissions.json
-   - Storage layer is intentionally isolated so it can be swapped
-     for Postgres / Supabase / Airtable / Notion without touching
-     the handler. See README section "Upgrade storage to a database".
+   - Storage lives in lib/design-partner-store.js so future providers
+     (Postgres, Supabase, Airtable, Notion) are a one-file swap.
 ------------------------------------------------------------------ */
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "design-partner-submissions.json");
 
 const REQUIRED_FIELDS = [
   "fullName",
@@ -118,50 +112,6 @@ function validatePayload(raw) {
   }
 
   return { clean, errors };
-}
-
-/* ---------- Storage layer (isolated for easy migration) ---------- */
-
-async function ensureStore() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  try {
-    await fs.access(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, "[]", "utf8");
-  }
-}
-
-async function readAll() {
-  await ensureStore();
-  let raw = "";
-  try {
-    raw = await fs.readFile(DATA_FILE, "utf8");
-  } catch {
-    return [];
-  }
-  if (!raw.trim()) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // Malformed JSON — do not destroy it. Rename and start fresh.
-    const backup = `${DATA_FILE}.corrupt-${Date.now()}`;
-    try {
-      await fs.rename(DATA_FILE, backup);
-    } catch {
-      /* noop */
-    }
-    await fs.writeFile(DATA_FILE, "[]", "utf8");
-    return [];
-  }
-}
-
-async function append(entry) {
-  const all = await readAll();
-  all.push(entry);
-  const tmp = `${DATA_FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(all, null, 2), "utf8");
-  await fs.rename(tmp, DATA_FILE);
 }
 
 /* ---------- Handler ---------- */
