@@ -26,7 +26,6 @@ App runs on http://localhost:3000.
 | `/design-partners`     | Design Partners landing + application form               |
 | `/apply`               | Legacy apply page — redirects users to `/design-partners`|
 | `/api/design-partner`  | POST endpoint that validates + persists applications      |
-| `/api/design-partner/export` | GET — downloads all submissions as CSV (requires `ADMIN_EXPORT_KEY`) |
 
 ## Design system (dark Red × Black)
 
@@ -78,12 +77,15 @@ Submissions are appended to `data/design-partner-submissions.json`. Each entry:
 
 ### Viewing / exporting submissions
 
-- **Raw JSON:** open `data/design-partner-submissions.json` in your editor or Hostinger File Manager.
-- **CSV download:** `GET /api/design-partner/export?key=<ADMIN_EXPORT_KEY>` returns a spreadsheet-ready CSV (with UTF-8 BOM so Excel on Windows reads it correctly).
-  - Alternatively pass the key as a header: `Authorization: Bearer <ADMIN_EXPORT_KEY>`.
-  - Bookmark the URL with the key for one-click exports.
+Every submission is written to **two files** in the `data/` folder on every POST:
 
-Set `ADMIN_EXPORT_KEY` in `.env.local` for dev and in Hostinger → your Node.js app → **Environment variables** for production. Use a long random string (e.g. `openssl rand -hex 32`). If the var is missing on the server, the route returns `503` and refuses to serve.
+- `design-partner-submissions.json` — machine-readable source of truth (full entries + metadata).
+- `design-partner-submissions.csv` — spreadsheet-ready snapshot, regenerated from scratch after every submission.
+
+To view / download submissions:
+
+- **Locally:** open either file in Cursor / Excel / Numbers.
+- **On Hostinger:** File Manager → `domains/salezot.com/nodejs/dp/data/` → right-click the CSV → **Download**. Opens cleanly in Excel, Numbers, or Google Sheets (UTF-8 BOM is prepended so non-ASCII characters render correctly in Excel on Windows).
 
 ### Storage layer
 
